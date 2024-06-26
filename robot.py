@@ -1,6 +1,12 @@
 import numpy as np
-from scipy.spatial.transform import Rotation
+import serial, time
 from axis import Axis
+
+try:
+    arduino = serial.Serial(port='COM4', baudrate=115200, timeout=.1)
+    time.sleep(2)
+except:
+    print("no arduino connection possible")
 
 class Robot:
     def __init__(self):
@@ -15,7 +21,8 @@ class Robot:
         self.read_thetas()
         
         self.max_speed = 2000
-        self.currentSpeed = 100
+        self.current_speed = self.max_speed
+        self.current_speed_percentage = 100
         self.valid_speeds = [3, 5, 10, 30, 50, 100]
         
     def forward_kinematics(self):
@@ -73,31 +80,46 @@ class Robot:
             
     def set_speed(self, speed_percentage):
         if speed_percentage in self.valid_speeds:
-            self.currentSpeed = speed_percentage
+            self.current_speed_percentage = speed_percentage
+            self.current_speed = self.current_speed_percentage * self.max_speed / 100
         else:
             raise ValueError("Invalid speed percentage")
         
     def increase_speed(self):
-        currentIndex = self.valid_speeds.index(self.currentSpeed)
+        currentIndex = self.valid_speeds.index(self.current_speed_percentage)
         if currentIndex < len(self.valid_speeds) - 1:
-            self.currentSpeed = self.valid_speeds[currentIndex + 1]
-        self.set_speed(self.currentSpeed)
+            self.current_speed_percentage = self.valid_speeds[currentIndex + 1]
+        self.set_speed(self.current_speed_percentage)
             
     def decrease_speed(self):
-        currentIndex = self.valid_speeds.index(self.currentSpeed)
+        currentIndex = self.valid_speeds.index(self.current_speed_percentage)
         if currentIndex > 0:
-            self.currentSpeed = self.valid_speeds[currentIndex - 1]
-        self.set_speed(self.currentSpeed)
+            self.current_speed_percentage = self.valid_speeds[currentIndex - 1]
+        self.set_speed(self.current_speed_percentage)
             
     def calculate_steps(self, target_angle):
-        standard_steps = 200
         standard_degrees_per_step = 1.8
         step_mode = 4
         gear_transmission = 96
-        steps = standard_steps * step_mode
         degrees = standard_degrees_per_step / step_mode
         
-        return (target_angle / degrees) * gear_transmission
+        return int((target_angle / degrees) * gear_transmission)
+    
+    def send_string_over_serial(self):
+        array_to_send = []
+        for axis in self.axes:
+            theta = axis.get_theta()
+            steps = self.calculate_steps(theta)
+            array_to_send.append(str(steps))
+
+        array_to_send.append(str(self.current_speed))
+        string_to_send = ",".join(array_to_send)
+        
+        arduino.write(bytes(string_to_send, 'utf-8'))
+        
+        # for i in range(4):
+        #     data = arduino.readline().decode('utf-8').strip()
+        #     print(data)
 
             
     # def inverse_kinematics(self, target_transforms, max_iterations=1000, threshold=1e-6, alpha=0.1):

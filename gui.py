@@ -165,7 +165,7 @@ class App(customtkinter.CTk):
         self.update_speed_label()
         
     def update_speed_label(self):
-        self.label_speed.configure(text=robot.currentSpeed)
+        self.label_speed.configure(text=robot.current_speed_percentage)
  
         
     def save_current_position(self):

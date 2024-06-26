@@ -11,6 +11,7 @@ class Robot:
         #     (0,   0, 0,   0)    # axis flange
         ]
         self.axes = [Axis(*params) for params in self.axes_params]
+        self.thetas = []
         self.read_thetas()
         
         self.max_speed = 2000
@@ -35,6 +36,9 @@ class Robot:
             content = f.read().strip().split("\n\n")
             matrices = [np.fromstring(matrix_str, sep=" ").reshape((4, 4)) for matrix_str in content]
         return matrices
+    
+    def clear_forards_kinematics(self):
+        open('config/currentProgram.txt', 'w').close()
     
     def get_position(self):
         return self.forward_kinematics()[:3, 3]
@@ -77,11 +81,13 @@ class Robot:
         currentIndex = self.valid_speeds.index(self.currentSpeed)
         if currentIndex < len(self.valid_speeds) - 1:
             self.currentSpeed = self.valid_speeds[currentIndex + 1]
+        self.set_speed(self.currentSpeed)
             
     def decrease_speed(self):
         currentIndex = self.valid_speeds.index(self.currentSpeed)
         if currentIndex > 0:
             self.currentSpeed = self.valid_speeds[currentIndex - 1]
+        self.set_speed(self.currentSpeed)
             
     def calculate_steps(self, target_angle):
         standard_steps = 200

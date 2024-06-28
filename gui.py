@@ -169,13 +169,13 @@ class App(customtkinter.CTk):
  
         
     def save_current_position(self):
-        robot.save_forward_kinematics()
+        robot.save_thetas()
         
     def run_programm(self):
-        pass
+        robot.run_programm()
     
     def clear_programm(self):
-        robot.clear_forards_kinematics()
+        robot.clear_thetas()
         
 
 app = App()
